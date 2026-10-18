@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">LLM Health Bridge</string>
+    <string name="permission_rationale">LLM Health Bridge writes what you review and save to Health Connect: meals as nutrition records, drinks as hydration, body measurements (weight, height, body fat, lean body mass, bone mass, body water mass, basal metabolic rate) and vitals (blood pressure, blood glucose, body temperature, basal body temperature, heart rate, resting heart rate, blood oxygen, respiratory rate). It reads back only its own records to show your recent entries. It never reads other apps\' data and has no internet access.</string>
 </resources>
