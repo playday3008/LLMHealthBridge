@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.health.connect.client)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)

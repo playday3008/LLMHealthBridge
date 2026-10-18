@@ -46,6 +46,7 @@
     <string name="back">Back</string>
     <string name="send_failed">Could not prepare the photos: %1$s</string>
     <string name="describe_failed">Could not prepare the request: %1$s</string>
+    <string name="no_camera_app">No camera app available</string>
     <plurals name="saved_records">
         <item quantity="one">Saved %1$d record.</item>
         <item quantity="other">Saved %1$d records.</item>
@@ -86,6 +87,8 @@
     <string name="save_needs_install">Health Connect needs to be installed or updated before saving.</string>
     <string name="install_hc">Install or update Health Connect</string>
     <string name="save_unavailable">Health Connect is not available on this device.</string>
+    <string name="cannot_open_settings">Could not open Health Connect settings</string>
+    <string name="cannot_open_store">Could not open the app store</string>
     <string name="replaces_saved">Replaces saved entry: %1$s</string>
     <string name="review_reopened">Saved entry. Saving again replaces its records.</string>
     <string name="meal_type">Meal type</string>
