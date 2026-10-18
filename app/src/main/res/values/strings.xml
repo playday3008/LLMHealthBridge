@@ -1,4 +1,42 @@
 <resources>
     <string name="app_name">LLM Health Bridge</string>
     <string name="permission_rationale">LLM Health Bridge writes what you review and save to Health Connect: meals as nutrition records, drinks as hydration, body measurements (weight, height, body fat, lean body mass, bone mass, body water mass, basal metabolic rate) and vitals (blood pressure, blood glucose, body temperature, basal body temperature, heart rate, resting heart rate, blood oxygen, respiratory rate). It reads back only its own records to show your recent entries. It never reads other apps\' data and has no internet access.</string>
+    <string name="entry_deleted">Entry deleted</string>
+    <string name="entry_deleted_partly">Entry deleted, except types this app may no longer write. If it had any, allow them in Health Connect and delete it again.</string>
+    <string name="delete_failed">Delete failed: %1$s</string>
+    <string name="delete_denied">Health Connect permission is missing, so nothing was deleted.</string>
+    <string name="recent_hc_unavailable">Health Connect is not available on this device</string>
+    <string name="recent_hc_needs_install">Health Connect needs to be installed or updated</string>
+    <string name="recent_read_failed">Could not read recent entries: %1$s</string>
+    <string name="clipboard_no_text">The clipboard has no text</string>
+    <string name="clipboard_own_instructions">The clipboard still holds the instructions. Copy the reply first.</string>
+    <plurals name="photos_dropped">
+        <item quantity="one">%1$d photo could not be read and was not sent</item>
+        <item quantity="other">%1$d photos could not be read and were not sent</item>
+    </plurals>
+    <string name="photos_none_read">No photos could be read</string>
+    <string name="send_failed">Could not prepare the photos: %1$s</string>
+    <string name="describe_failed">Could not prepare the request: %1$s</string>
+    <plurals name="saved_records">
+        <item quantity="one">Saved %1$d record.</item>
+        <item quantity="other">Saved %1$d records.</item>
+    </plurals>
+    <string name="save_failed">Save failed: %1$s</string>
+    <string name="save_cleanup_failed">Removing the records they replace failed; save again to finish.</string>
+    <plurals name="removed_entries">
+        <item quantity="one">Deleted %1$d saved entry.</item>
+        <item quantity="other">Deleted %1$d saved entries.</item>
+    </plurals>
+    <string name="share_failed">Could not open the LLM app: %1$s</string>
+    <string name="remove_failed">Could not delete saved entries: %1$s</string>
+    <string name="removed_partly">Types this app may no longer write were left alone; allow them in Health Connect and delete again.</string>
+    <string name="nothing_saved">Nothing was saved or deleted.</string>
+    <string name="saved_entries_found">Entries saved earlier from this conversation turned up. Check them, then save again.</string>
+    <plurals name="save_partly_failed">
+        <item quantity="one">Saved %1$d record, then failed: %2$s</item>
+        <item quantity="other">Saved %1$d records, then failed: %2$s</item>
+    </plurals>
+    <string name="shared_nothing">The shared item has no text to read.</string>
+    <string name="shared_unreadable">Could not read the shared file: %1$s</string>
+    <string name="save_blocked">Not saved: fix the highlighted problems first</string>
 </resources>
