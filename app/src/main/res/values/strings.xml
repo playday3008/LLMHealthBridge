@@ -1,10 +1,11 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">LLM Health Bridge</string>
     <string name="permission_rationale">LLM Health Bridge writes what you review and save to Health Connect: meals as nutrition records, drinks as hydration, body measurements (weight, height, body fat, lean body mass, bone mass, body water mass, basal metabolic rate) and vitals (blood pressure, blood glucose, body temperature, basal body temperature, heart rate, resting heart rate, blood oxygen, respiratory rate). It reads back only its own records to show your recent entries. It never reads other apps\' data and has no internet access.</string>
     <string name="entry_deleted">Entry deleted</string>
     <string name="entry_deleted_partly">Entry deleted, except types this app may no longer write. If it had any, allow them in Health Connect and delete it again.</string>
     <string name="delete_failed">Delete failed: %1$s</string>
     <string name="delete_denied">Health Connect permission is missing, so nothing was deleted.</string>
+    <string name="edit_meal">Edit saved entry</string>
     <string name="recent_hc_unavailable">Health Connect is not available on this device</string>
     <string name="recent_hc_needs_install">Health Connect needs to be installed or updated</string>
     <string name="recent_read_failed">Could not read recent entries: %1$s</string>
@@ -15,6 +16,7 @@
         <item quantity="other">%1$d photos could not be read and were not sent</item>
     </plurals>
     <string name="photos_none_read">No photos could be read</string>
+    <string name="back">Back</string>
     <string name="send_failed">Could not prepare the photos: %1$s</string>
     <string name="describe_failed">Could not prepare the request: %1$s</string>
     <plurals name="saved_records">
@@ -27,16 +29,82 @@
         <item quantity="one">Deleted %1$d saved entry.</item>
         <item quantity="other">Deleted %1$d saved entries.</item>
     </plurals>
+    <plurals name="delete_button">
+        <item quantity="one">Delete %1$d saved entry</item>
+        <item quantity="other">Delete %1$d saved entries</item>
+    </plurals>
     <string name="share_failed">Could not open the LLM app: %1$s</string>
+    <string name="replaces_with_nothing">Saving deletes saved entry: %1$s</string>
+    <string name="value_delete_description">Delete %1$s</string>
+    <string name="value_done_description">Done editing %1$s</string>
     <string name="remove_failed">Could not delete saved entries: %1$s</string>
     <string name="removed_partly">Types this app may no longer write were left alone; allow them in Health Connect and delete again.</string>
     <string name="nothing_saved">Nothing was saved or deleted.</string>
+    <string name="leftovers_title">Saved earlier, not in this reply</string>
+    <string name="leftovers_hint">These entries were saved from the same conversation. Ticked ones are deleted when you save.</string>
+    <string name="leftover_delete">Delete %1$s, %2$s</string>
+    <string name="lookup_pending">Checking what was saved earlier from this conversation.</string>
+    <string name="lookup_failed">Could not check what was saved earlier from this conversation, so entries this reply leaves out stay saved.</string>
     <string name="saved_entries_found">Entries saved earlier from this conversation turned up. Check them, then save again.</string>
     <plurals name="save_partly_failed">
         <item quantity="one">Saved %1$d record, then failed: %2$s</item>
         <item quantity="other">Saved %1$d records, then failed: %2$s</item>
     </plurals>
+    <plurals name="save_button">
+        <item quantity="one">Save %1$d record to Health Connect</item>
+        <item quantity="other">Save %1$d records to Health Connect</item>
+    </plurals>
+    <string name="save_denied">Some types were not allowed, so nothing was saved yet. Their rows are left out of the next save.</string>
+    <string name="open_hc_settings">Open Health Connect settings</string>
+    <string name="save_needs_install">Health Connect needs to be installed or updated before saving.</string>
+    <string name="install_hc">Install or update Health Connect</string>
+    <string name="save_unavailable">Health Connect is not available on this device.</string>
+    <string name="replaces_saved">Replaces saved entry: %1$s</string>
+    <string name="review_reopened">Saved entry. Saving again replaces its records.</string>
+    <string name="meal_type">Meal type</string>
+    <string name="meal_time">Time</string>
+    <string name="totals_line" tools:ignore="PluralsCandidate">%1$d kcal  |  P %2$s g  |  C %3$s g  |  F %4$s g</string>
+    <string name="item_kcal" tools:ignore="PluralsCandidate">%1$d kcal</string>
+    <string name="item_no_kcal">no kcal</string>
+    <string name="show_all">Show all</string>
+    <string name="hide_all">Hide</string>
+    <string name="item_tick_description">Save %1$s</string>
+    <string name="show_all_description">Show all nutrients of %1$s</string>
+    <string name="hide_all_description">Hide the nutrients of %1$s</string>
     <string name="shared_nothing">The shared item has no text to read.</string>
     <string name="shared_unreadable">Could not read the shared file: %1$s</string>
+    <string name="warnings">Warnings</string>
+    <string name="no_items">No items</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="editor_portion">Portion</string>
+    <string name="editor_percent">Exact portion (%)</string>
+    <string name="editor_percent_invalid">Enter a number greater than 0</string>
+    <string name="editor_live_line" tools:ignore="PluralsCandidate">%1$d kcal / P %2$s / C %3$s / F %4$s</string>
+    <string name="editor_edit_nutrients">Edit name and individual nutrients</string>
+    <string name="editor_hide_nutrients">Hide name and nutrients</string>
+    <string name="editor_name">Name</string>
+    <string name="editor_number_invalid">Not a number</string>
+    <string name="editor_delete">Delete item</string>
+    <string name="editor_done">Done</string>
+    <string name="blocked_title">This reply cannot be used</string>
+    <string name="blocked_snippet">Extracted JSON</string>
+    <string name="editor_read_as">Read as %1$s %2$s</string>
     <string name="save_blocked">Not saved: fix the highlighted problems first</string>
+    <string name="section_nutrition">Nutrition</string>
+    <string name="section_body">Body measurements</string>
+    <string name="section_vitals">Vitals</string>
+    <string name="entry_meal">Meal</string>
+    <string name="entry_hydration">Drink</string>
+    <string name="entry_body">Measurement</string>
+    <string name="entry_vitals">Reading</string>
+    <string name="entry_remove">Remove</string>
+    <string name="entry_remove_description">Remove %1$s, %2$s</string>
+    <string name="entry_date_description">Change date of %1$s, now %2$s</string>
+    <string name="entry_time_description">Change time of %1$s, now %2$s</string>
+    <string name="no_values">No values</string>
+    <string name="not_allowed">Not allowed to write %1$s</string>
+    <string name="denied_where">In Health Connect open App permissions, then LLM Health Bridge, and allow %1$s</string>
+    <string name="nutrition_label">nutrition</string>
+    <string name="value_delete">Delete</string>
 </resources>
