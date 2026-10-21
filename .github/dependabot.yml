@@ -1,14 +1,6 @@
 version: 2
 
 updates:
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: monthly
-    labels: []
-    commit-message:
-      prefix: chore
-
   - package-ecosystem: gradle
     directory: /
     schedule:
@@ -16,6 +8,30 @@ updates:
     labels: []
     commit-message:
       prefix: chore
+    # Each family below shares one catalog version, so its parts move together, majors included.
+    # A dependency joins the first group it matches, so order is significant.
     groups:
-      gradle:
-        patterns: ["*"]
+      kotlin:
+        patterns:
+          - 'org.jetbrains.kotlin:*'
+          - 'org.jetbrains.kotlin.plugin.*'
+      lifecycle:
+        patterns:
+          - 'androidx.lifecycle:*'
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: []
+    commit-message:
+      prefix: chore
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
