@@ -1,0 +1,225 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: Mark as prerelease (tagged vX.Y.Z-rcN)
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  GRADLE_FILE: app/build.gradle.kts
+
+jobs:
+  validate:
+    name: Resolve and validate version
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      notes_from: ${{ steps.version.outputs.notes_from }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version from app/build.gradle.kts
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Releases are made from main, not $GITHUB_REF"
+            exit 1
+          fi
+
+          version_code() { grep -m1 -oP '^\s*versionCode = \K[0-9]+' || true; }
+          BASE=$(grep -m1 -oP '^\s*versionName = "\K[0-9]+\.[0-9]+\.[0-9]+(?=")' "$GRADLE_FILE" || true)
+          CODE=$(version_code < "$GRADLE_FILE")
+          if [ -z "$BASE" ] || [ -z "$CODE" ]; then
+            echo "::error::No versionName \"X.Y.Z\" or versionCode found in $GRADLE_FILE"
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/v$BASE" > /dev/null; then
+            echo "::error::Tag 'v$BASE' already exists. Bump versionName and versionCode in $GRADLE_FILE."
+            exit 1
+          fi
+
+          # Prereleases are left out: vX.Y.Z-rc1 must not block vX.Y.Z.
+          LATEST_TAG=$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
+          LATEST=${LATEST_TAG#v}
+          if [ -n "$LATEST" ] \
+             && { [ "$BASE" = "$LATEST" ] \
+                  || [ "$(printf '%s\n%s\n' "$BASE" "$LATEST" | sort -V | head -1)" != "$LATEST" ]; }; then
+            echo "::error::Version '$BASE' is not greater than the latest release '$LATEST_TAG'"
+            exit 1
+          fi
+
+          # Android installs an update only when its versionCode is higher.
+          if [ -n "$LATEST_TAG" ]; then
+            LATEST_CODE=$(git show "$LATEST_TAG:$GRADLE_FILE" | version_code)
+            if [ -n "$LATEST_CODE" ] && [ "$CODE" -le "$LATEST_CODE" ]; then
+              echo "::error::versionCode $CODE is not greater than $LATEST_CODE of $LATEST_TAG"
+              exit 1
+            fi
+          fi
+
+          # Needs contents:write, otherwise the API hides drafts. Unguarded on purpose: a
+          # transient failure must not read as "nothing exists".
+          RELEASES=$(gh release list --limit 200 --json tagName --jq '.[].tagName')
+
+          if [ "$PRERELEASE" = "true" ]; then
+            # Tags plus every release, so a deleted or draft rc still advances the counter.
+            LAST_RC=$( { git tag --list "v$BASE-rc*"; echo "$RELEASES"; } \
+                       | grep -oP "^v\Q$BASE\E-rc\K[0-9]+$" | sort -n | tail -1 || true)
+            VERSION="$BASE-rc$(( ${LAST_RC:-0} + 1 ))"
+          else
+            VERSION="$BASE"
+          fi
+
+          if echo "$RELEASES" | grep -qxF "v$VERSION"; then
+            echo "::error::Release 'v$VERSION' already exists (possibly a draft). Delete it or bump the version."
+            exit 1
+          fi
+
+          {
+            echo "version=$VERSION"
+            echo "tag=v$VERSION"
+            echo "notes_from=$LATEST_TAG"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing v$VERSION, versionCode $CODE (previous: ${LATEST_TAG:-none})" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build signed APK
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    needs: [validate]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Decode signing key
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$SIGNING_KEYSTORE_BASE64" ]; then
+            echo "::error::The SIGNING_KEYSTORE_BASE64 secret is not set"
+            exit 1
+          fi
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "SIGNING_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Check and build
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew check assembleRelease
+
+      - name: Verify signature and name the APK
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
+          mkdir dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/LLMHealthBridge-$VERSION.apk"
+          cp app/build/outputs/mapping/release/mapping.txt "dist/mapping-$VERSION.txt"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: dist/
+          if-no-files-found: error
+
+  smoke:
+    name: Smoke test on an emulator
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    needs: [validate, build]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download APK
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: dist
+
+      # Lets the emulator use hardware acceleration on the hosted runner.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install, launch and share a reply
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          script: .github/scripts/smoke-test.sh dist/LLMHealthBridge-${{ needs.validate.outputs.version }}.apk
+
+  release:
+    name: Create draft release
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    needs: [validate, build, smoke]
+    permissions:
+      contents: write
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: dist
+
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum -- * > SHA256SUMS
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.validate.outputs.tag }}
+          PREVIOUS: ${{ needs.validate.outputs.notes_from }}
+        run: |
+          set -- -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA"
+          if [ -n "$PREVIOUS" ]; then
+            set -- "$@" -f previous_tag_name="$PREVIOUS"
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" "$@" --jq .body > notes.md
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ${{ needs.validate.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          draft: true
+          prerelease: ${{ inputs.prerelease }}
+          body_path: notes.md
+          files: dist/*
