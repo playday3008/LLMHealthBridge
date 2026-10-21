@@ -47,6 +47,8 @@ The build uses JDK 25 through Gradle toolchains; Gradle downloads it if none is 
 ./gradlew assembleRelease    # release APK (unsigned)
 ```
 
+To sign the release APK, set `SIGNING_STORE_FILE`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS` and `SIGNING_KEY_PASSWORD` before building. CI does this from repository secrets; signed APKs of each release are on the Releases page.
+
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).

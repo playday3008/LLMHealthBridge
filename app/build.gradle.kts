@@ -9,6 +9,9 @@ kotlin {
     jvmToolchain(25)
 }
 
+// Release signing comes from the environment (CI secrets); without it the release APK is unsigned.
+val signingStore: String? = providers.environmentVariable("SIGNING_STORE_FILE").orNull
+
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
@@ -30,8 +33,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (signingStore != null) {
+            create("release") {
+                storeFile = file(signingStore)
+                storePassword = providers.environmentVariable("SIGNING_STORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("SIGNING_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("SIGNING_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             optimization {
                 enable = true
             }
