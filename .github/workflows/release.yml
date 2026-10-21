@@ -144,7 +144,7 @@ jobs:
           "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
           mkdir dist
           cp app/build/outputs/apk/release/app-release.apk "dist/LLMHealthBridge-$VERSION.apk"
-          cp app/build/outputs/mapping/release/mapping.txt "dist/mapping-$VERSION.txt"
+          gzip -9 -c app/build/outputs/mapping/release/mapping.txt > "dist/mapping-$VERSION.txt.gz"
 
       - name: Upload APK
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -191,6 +191,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
       - name: Download APK
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -201,17 +205,39 @@ jobs:
         working-directory: dist
         run: sha256sum -- * > SHA256SUMS
 
-      - name: Generate release notes
+      # Commit subjects since the previous release, sorted by Conventional Commits type. GitHub's
+      # generated notes list merged pull requests, and commits here go to main directly.
+      - name: Write release notes
         env:
-          GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.validate.outputs.tag }}
           PREVIOUS: ${{ needs.validate.outputs.notes_from }}
         run: |
-          set -- -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA"
+          RANGE=${PREVIOUS:+$PREVIOUS..}$GITHUB_SHA
+          git log --no-merges --reverse --format=%s "$RANGE" > subjects.txt
+          TYPE='(\(.*\))?!?:'
+          # section TITLE GREP_ARGS...: the matching subjects as a list under a heading, if any.
+          section() {
+            title=$1
+            shift
+            lines=$(grep "$@" subjects.txt || true)
+            if [ -n "$lines" ]; then
+              printf '## %s\n\n' "$title"
+              printf '%s\n' "$lines" | sed 's/^/- /'
+              echo
+            fi
+          }
           if [ -n "$PREVIOUS" ]; then
-            set -- "$@" -f previous_tag_name="$PREVIOUS"
+            LINK="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/$PREVIOUS...$TAG"
+          else
+            LINK="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commits/$TAG"
           fi
-          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" "$@" --jq .body > notes.md
+          {
+            section Features -E "^feat$TYPE"
+            section Fixes -E "^fix$TYPE"
+            section Other -vE "^(feat|fix)$TYPE"
+            echo "**Full Changelog**: $LINK"
+          } > notes.md
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create draft release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
